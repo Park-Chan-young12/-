@@ -1,7 +1,5 @@
 streamlit
-torch
-torchvision
+rembg
 Pillow
 numpy
-opencv-python-headless
-pandas
+onnxruntime
