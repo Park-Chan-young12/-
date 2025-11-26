@@ -1,50 +1,64 @@
 import streamlit as st
-import torch
+from rembg import remove
 from PIL import Image
 import io
 
-st.set_page_config(page_title="사람·사물 구별기", page_icon="🧠")
+st.set_page_config(page_title="배경제거기", page_icon="🖼️", layout="centered")
 
-st.title("🧠 사람 / 사물 자동 구별기 (YOLOv5 기반)")
+# ---- Header ----
+st.markdown(
+    """
+    <h1 style='text-align: center; margin-bottom: 10px;'>🖼️ 이미지 배경 제거기</h1>
+    <p style='text-align: center; color: gray; font-size: 16px;'>
+        AI가 자동으로 배경을 투명하게 만들어줍니다.
+    </p>
+    """,
+    unsafe_allow_html=True,
+)
 
-@st.cache_resource
-def load_model():
-    return torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
-
-model = load_model()
-
-uploaded_file = st.file_uploader("이미지를 업로드하세요", type=["jpg","jpeg","png"])
+# ---- Upload Box ----
+uploaded_file = st.file_uploader(
+    "이미지를 업로드하세요",
+    type=["jpg", "jpeg", "png"],
+    help="JPG / PNG 파일 업로드 가능",
+)
 
 if uploaded_file:
-    img = Image.open(uploaded_file)
-    st.subheader("📌 업로드한 이미지")
-    st.image(img, use_column_width=True)
+    image = Image.open(uploaded_file)
 
-    if st.button("사람·사물 판별하기"):
-        with st.spinner("분석 중..."):
-            results = model(img)
+    with st.container():
+        st.markdown("### 📌 업로드한 이미지")
+        st.image(image, use_column_width=True)
 
-        # 결과 이미지 생성
-        result_img = results.render()[0]
-        result_pil = Image.fromarray(result_img)
+    if st.button("✨ 배경 제거하기"):
+        with st.spinner("배경 제거 중입니다... ⏳"):
+            result = remove(image)
 
-        # 사람/사물 카운트
-        df = results.pandas().xyxy[0]
-        person_count = (df["name"] == "person").sum()
-        object_count = len(df) - person_count
+        st.markdown("### 🎉 배경 제거 완료!")
+        st.image(result, use_column_width=True)
 
-        st.subheader("🧾 분석 결과")
-        st.write(f"👤 **사람 감지 수:** {person_count}")
-        st.write(f"📦 **사물 감지 수:** {object_count}")
-
-        st.image(result_pil, use_column_width=True)
-
-        # 다운로드
+        # Save result to buffer
         buf = io.BytesIO()
-        result_pil.save(buf, format="PNG")
+        result.save(buf, format="PNG")
+        byte_im = buf.getvalue()
+
         st.download_button(
-            label="📥 결과 이미지 다운로드",
-            data=buf.getvalue(),
-            file_name="detected.png",
+            label="📥 결과 이미지 다운로드 (PNG)",
+            data=byte_im,
+            file_name="removed_background.png",
             mime="image/png",
         )
+
+else:
+    st.info("좌측 또는 상단에서 이미지 파일을 업로드하세요!")
+
+# Footer
+st.markdown(
+    """
+    <hr>
+    <p style='text-align: center; color: gray; font-size: 14px;'>
+        Made with ❤️ using Streamlit + rembg
+    </p>
+    """,
+    unsafe_allow_html=True,
+)
