@@ -1,16 +1,15 @@
 import streamlit as st
-from ultralytics import YOLO
+import torch
 from PIL import Image
 import io
 
 st.set_page_config(page_title="사람·사물 구별기", page_icon="🧠")
 
-st.title("🧠 사람 / 사물 자동 구별기 (YOLO 기반)")
+st.title("🧠 사람 / 사물 자동 구별기 (YOLOv5 기반)")
 
-# 모델 로드 (YOLOv8n: 가벼운 모델)
 @st.cache_resource
 def load_model():
-    return YOLO("yolov8n.pt")
+    return torch.hub.load("ultralytics/yolov5", "yolov5s", pretrained=True)
 
 model = load_model()
 
@@ -22,30 +21,22 @@ if uploaded_file:
     st.image(img, use_column_width=True)
 
     if st.button("사람·사물 판별하기"):
-        with st.spinner("AI가 이미지를 분석하고 있습니다…"):
-            results = model.predict(img)
+        with st.spinner("분석 중..."):
+            results = model(img)
 
-        result_img = results[0].plot()   # 감지된 결과 그리기
+        # 결과 이미지 생성
+        result_img = results.render()[0]
         result_pil = Image.fromarray(result_img)
 
-        # 사람/사물 분류
-        names = model.names
-        person_count = 0
-        object_count = 0
-
-        for box in results[0].boxes:
-            cls = int(box.cls[0])
-            label = names[cls]
-            if label == "person":
-                person_count += 1
-            else:
-                object_count += 1
+        # 사람/사물 카운트
+        df = results.pandas().xyxy[0]
+        person_count = (df["name"] == "person").sum()
+        object_count = len(df) - person_count
 
         st.subheader("🧾 분석 결과")
         st.write(f"👤 **사람 감지 수:** {person_count}")
         st.write(f"📦 **사물 감지 수:** {object_count}")
 
-        st.subheader("🔍 감지 결과 이미지")
         st.image(result_pil, use_column_width=True)
 
         # 다운로드
