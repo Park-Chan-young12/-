@@ -3,50 +3,36 @@ from rembg import remove
 from PIL import Image
 import io
 
-st.set_page_config(
-    page_title="배경제거기",
-    page_icon="🖼️",
-    layout="centered"
-)
+st.set_page_config(page_title="Background Remover", page_icon="📷")
 
-# ---- Title ----
-st.markdown(
-    """
-    <h1 style='text-align:center;'>🖼️ 배경 제거기</h1>
-    <p style='text-align:center; color:#666;'>AI가 자동으로 사진의 배경을 제거합니다.</p>
-    """,
-    unsafe_allow_html=True
-)
+st.title("📷 이미지 배경 제거기 (Powered by rembg)")
 
-uploaded_file = st.file_uploader(
-    "이미지를 업로드하세요 (jpg/png)",
-    type=["jpg", "jpeg", "png"]
-)
+uploaded_file = st.file_uploader("이미지를 업로드하세요 (jpg, png 등)", type=["png", "jpg", "jpeg"])
 
-if uploaded_file:
-    # Load image
+if uploaded_file is not None:
+    # 원본 이미지 표시
     image = Image.open(uploaded_file)
-
-    st.subheader("📌 업로드한 이미지")
+    st.subheader("업로드한 이미지")
     st.image(image, use_column_width=True)
 
-    if st.button("✨ 배경 제거하기"):
-        with st.spinner("배경 제거 중입니다... 잠시만 기다려주세요."):
-            result = remove(image)  # rembg lightweight 모드 → opencv 필요없음
+    # 배경 제거 버튼
+    if st.button("배경 제거하기"):
+        with st.spinner("배경을 제거하는 중입니다... ⏳"):
+            # rembg 처리
+            result = remove(image)
 
-        st.subheader("🎉 결과 이미지")
+            # 결과물 메모리에 저장
+            buf = io.BytesIO()
+            result.save(buf, format="PNG")
+            byte_im = buf.getvalue()
+
+        st.subheader("배경 제거 결과")
         st.image(result, use_column_width=True)
 
-        # Download output
-        buf = io.BytesIO()
-        result.save(buf, format="PNG")
-        byte_img = buf.getvalue()
-
+        # 다운로드 버튼
         st.download_button(
-            label="📥 결과 이미지 다운로드 (PNG)",
-            data=byte_img,
+            label="배경 제거 이미지 다운로드",
+            data=byte_im,
             file_name="removed_background.png",
             mime="image/png"
         )
-else:
-    st.info("이미지를 업로드하면 바로 배경 제거가 가능합니다.")
