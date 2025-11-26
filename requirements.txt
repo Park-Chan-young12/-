@@ -1,5 +1,6 @@
 streamlit
-rembg
+ultralytics
 Pillow
+torch
 numpy
-onnxruntime
+opencv-python
