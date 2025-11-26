@@ -12,4 +12,4 @@ uploaded_file = st.file_uploader("이미지를 업로드하세요 (jpg, png 등)
 if uploaded_file is not None:
     # 원본 이미지 표시
     image = Image.open(uploaded_file)
-    st.subheader("업
+    st.subheader("업로드한 PDF 파일")
